@@ -1,0 +1,91 @@
+var AWS=require('aws-sdk');
+AWS.config.update({region: '<region>'});
+//var dynamodb = new AWS.DynamoDB({apiVersion: '2012-11-05'});
+exports.handler = async (event) => {
+    // TODO implement
+
+    var inData=JSON.parse(event.Records[0].body);
+    
+    //var inData=event.Records[0];
+    var iotdata = new AWS.IotData({endpoint:"<IOT_CORE_ENDPOINT>"});
+    //console.log("Event is "+JSON.stringify(event.Records[0]));
+    console.log("Event body is "+inData.batteryid);
+    console.log("inData data type is "+typeof(inData));
+     //console.log("EVENT: \n" + JSON.stringify(event, null, 2))
+  //return s3.listBuckets().promise();
+ 
+  
+  //console.log("creating read for "+inData(0));
+  //console.log("with connected load of "+inData.connLoad+" "+typeof(inData.connLoad));
+  //console.log("and generating data for "+inData.days+" days, starting from "+inData.readStart+" till "+inData.readEnd+" "+typeof(inData.readStart));
+  //console.log("with "+inData.intervalGap+" minutes interval"+" "+typeof(inData.intervalGap));
+  
+  var batteryid=inData.batteryid;
+  var ecapacitykwh=inData.ecapacitykwh;
+  var maxpowerkw=inData.maxpowerkw;
+  var maxcurrentamperes=inData.maxcurrentamperes;
+  var nomdcvoltagevolts=inData.nomdcvoltagevolts;
+  var installlat=inData.installlat;
+  var installlong=inData.installlong;
+  var curchargelevelkwh=parseInt(inData.curchargelevelkwh);
+  //var curchargelevelkwh=Math.round(ecapacitykwh*Math.random());
+  var locationid=inData.locationid;
+  var connectedsubstation=inData.connsubstation;
+  var areaname=inData.areaname;
+  
+  //if(curchargelevelkwh==null)  curchargelevelkwh=100;
+  
+  var chargechangerandom=Math.random();
+  var voltcurrentrandom=Math.random();
+  var newchargelevelkwh=0,newcurrentamperes=0,newvoltagevolts=0;
+  
+  if(curchargelevelkwh>=ecapacitykwh){
+      newchargelevelkwh=curchargelevelkwh-(curchargelevelkwh*chargechangerandom);
+  }else{
+      newchargelevelkwh=curchargelevelkwh+(curchargelevelkwh*chargechangerandom);
+      if (newchargelevelkwh>=ecapacitykwh) newchargelevelkwh=ecapacitykwh
+  }
+  
+  //newchargelevelkwh=newchargelevelkwh.toFixed(2);
+  newcurrentamperes=(maxcurrentamperes-(maxcurrentamperes*voltcurrentrandom/100)).toFixed(2);
+  newvoltagevolts=(nomdcvoltagevolts-(nomdcvoltagevolts*voltcurrentrandom/100)).toFixed(2);
+  
+    console.log (ecapacitykwh);
+    console.log("creating read for "+batteryid+" "+curchargelevelkwh);
+    console.log("charge random is "+chargechangerandom);
+    console.log("new charge level "+newchargelevelkwh);
+    console.log("new voltage and current "+newvoltagevolts+" and "+newcurrentamperes);
+  
+  var dt=new Date();
+  //var measuredttm=dt.getFullYear()+"-"+(dt.getMonth()+1)+"-"+dt.getDate()+" "+dt.getHours()+":"+dt.getMinutes()+":"+dt.getSeconds();
+  var measuredttm=dt.getFullYear()+"-"+(dt.getMonth()+1).toString().padStart(2,"0")+"-"+(dt.getDate()).toString().padStart(2,"0")+" "+(dt.getHours()).toString().padStart(2,"0")+":"+(dt.getMinutes()).toString().padStart(2,"0")+":"+(dt.getSeconds()).toString().padStart(2,"0");
+  var iotparams={
+      topic:'topic_1',
+      payload:JSON.stringify({"batteryid":batteryid,"measureddatetime":measuredttm,
+      "becapacitykwh":ecapacitykwh,"bmaxpowerkw":maxpowerkw,
+      "bnomdcvoltagevolts":nomdcvoltagevolts,"bmaxcurrentamperes":maxcurrentamperes,
+      "bcurchargelevelkwh":curchargelevelkwh,"bnewchargelevelkwh":newchargelevelkwh,
+      "bnewcurrentamperes":newcurrentamperes,"bnewvoltagevolts":newvoltagevolts,
+      "binstalllat":installlat,"binstalllong":installlong,
+      "installlocation":{lat:installlat,lon:installlong},
+      "locationid":locationid,
+      "connectedsubstation":connectedsubstation,
+      "areaname":areaname,
+      "fullmessagestring":batteryid+'|'+measuredttm+'|'+ecapacitykwh+'|'+maxpowerkw+'|'+nomdcvoltagevolts+'|'+maxcurrentamperes+'|'+curchargelevelkwh+'|'+newchargelevelkwh+'|'+newcurrentamperes+'|'+newvoltagevolts+'|'+installlat+'|'+installlong+'|'+locationid+'|'+connectedsubstation+'|'+areaname+'\n',
+      "thismessagetype":"storagemeasurement"
+      }),
+      qos:'0'
+  }
+  console.log(iotparams);
+  var publishiotdata=await iotdata.publish(iotparams).promise();
+  console.log(publishiotdata);
+
+  
+  
+    const response = {
+        statusCode: 200,
+        body: JSON.stringify('Hello from Lambda!'),
+    };
+    return response;
+};
+

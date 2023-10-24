@@ -1,0 +1,74 @@
+[
+  {
+    "Name": "locationid",
+    "Type": "bigint"
+  },
+  {
+    "Name": "batteryid",
+    "Type": "bigint"
+  },
+  {
+    "Name": "manufacturer",
+    "Type": "string"
+  },
+  {
+    "Name": "model",
+    "Type": "string"
+  },
+  {
+    "Name": "energycapacitykwh",
+    "Type": "bigint"
+  },
+  {
+    "Name": "maximumpowerkw",
+    "Type": "bigint"
+  },
+  {
+    "Name": "maxdccurrentamperes",
+    "Type": "bigint"
+  },
+  {
+    "Name": "noofracks",
+    "Type": "bigint"
+  },
+  {
+    "Name": "batterychemistry",
+    "Type": "string"
+  },
+  {
+    "Name": "installedlocationlat",
+    "Type": "double"
+  },
+  {
+    "Name": "installedlocationlong",
+    "Type": "double"
+  },
+  {
+    "Name": "voltageclass",
+    "Type": "bigint"
+  },
+  {
+    "Name": "nominaldcvoltagevolts",
+    "Type": "bigint"
+  },
+  {
+    "Name": "connectedsubstation",
+    "Type": "string"
+  },
+  {
+    "Name": "areaname",
+    "Type": "string"
+  },
+  {
+    "Name": "minoperatingtemperature",
+    "Type": "bigint"
+  },
+  {
+    "Name": "maxoperatingtemperature",
+    "Type": "bigint"
+  },
+  {
+    "Name": "manufactureddate",
+    "Type": "string"
+  }
+]

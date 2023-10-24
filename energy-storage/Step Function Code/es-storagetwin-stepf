@@ -1,0 +1,40 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Athena StartQueryExecution",
+  "States": {
+    "Athena StartQueryExecution": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
+      "Parameters": {
+        "QueryString": "SELECT e1.batteryid,locationid,energycapacitykwh,maximumpowerkw,maxdccurrentamperes,installedlocationlat,installedlocationlong,nominaldcvoltagevolts,connectedsubstation,areaname,newchargelevelkwh FROM AwsDataCatalog.energystorage.betteries_info e1,(select batteryid,max(measuredttm) measuredttm from AwsDataCatalog.energystorage.batteries_measurements group by batteryid) e2,AwsDataCatalog.energystorage.batteries_measurements e3 where e1.batteryid=e2.batteryid and e1.batteryid=e3.batteryid and e3.measuredttm=e2.measuredttm",
+        "WorkGroup": "primary",
+        "ResultConfiguration": {
+          "OutputLocation": "s3://[BucketName]/energystorage"
+        }
+      },
+      "Next": "Lambda Invoke"
+    },
+    "Lambda Invoke": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:[region]:[AccountNo]:function:es-storagetwin:$LATEST",
+        "Payload.$": "$"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true
+    }
+  }
+}

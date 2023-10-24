@@ -1,0 +1,5 @@
+"connectedsubstation","farmid","generationcapacitykva","generationtype","installedlocationlat","installedlocationlong"
+"MATTUPETTY-11KV","900011","20000","Wind","10.083278","77.075325"
+"MATTUPETTY-11KV","900012","1000","Hydro","10.075509","77.063646"
+"MOOLAKADAI-22KV","800212","2000","Solar","10.082978","77.049036"
+"PATTALINE-1-11KV","700393","7000","Wind","10.093448","77.064253"

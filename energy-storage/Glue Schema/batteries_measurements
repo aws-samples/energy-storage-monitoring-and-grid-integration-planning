@@ -1,0 +1,64 @@
+[
+  {
+    "Name": "batteryid",
+    "Type": "bigint"
+  },
+  {
+    "Name": "measuredttm",
+    "Type": "string"
+  },
+  {
+    "Name": "ecapacitykwh",
+    "Type": "bigint"
+  },
+  {
+    "Name": "maxpowerkw",
+    "Type": "bigint"
+  },
+  {
+    "Name": "nomdcvoltagevolts",
+    "Type": "bigint"
+  },
+  {
+    "Name": "maxcurrentamperes",
+    "Type": "bigint"
+  },
+  {
+    "Name": "curchargelevelkwh",
+    "Type": "bigint"
+  },
+  {
+    "Name": "newchargelevelkwh",
+    "Type": "double"
+  },
+  {
+    "Name": "newcurrentamperes",
+    "Type": "double"
+  },
+  {
+    "Name": "newvoltagevolts",
+    "Type": "double"
+  },
+  {
+    "Name": "installlat",
+    "Type": "double"
+  },
+  {
+    "Name": "installlong",
+    "Type": "double"
+  },
+  {
+    "Name": "col13",
+    "Type": "bigint",
+    "Comment": ""
+  },
+  {
+    "Name": "col14",
+    "Type": "string",
+    "Comment": ""
+  },
+  {
+    "Name": "col15",
+    "Type": "string"
+  }
+]

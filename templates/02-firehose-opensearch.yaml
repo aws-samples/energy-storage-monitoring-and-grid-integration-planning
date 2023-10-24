@@ -1,0 +1,494 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  SourceBucketName:
+    Type: String
+  DestinationBucketName:
+    Type: String
+  # DataBucketForTesting:
+  #   Type: String 
+  OpenSearchUsername:
+    Type: String
+  OpenSearchPassword:
+    Type: String
+  UserNameParameter:
+    Type: String
+
+Resources:
+  MyKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: My KMS key
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: key-default-1
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+            Action:
+              - kms:*
+            Resource: "*"
+          - Sid: Allow Use of the Key
+            Effect: Allow
+            Principal:
+              AWS: 
+                Fn::Join:
+                  - ''
+                  - - 'arn:aws:iam::'
+                    - !Ref AWS::AccountId
+                    - ':user/'
+                    - !Ref UserNameParameter
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+            Resource: "*"
+          - Sid: Allow Attachment of EBS Volumes
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action:
+              - kms:CreateGrant
+            Resource: "*"
+            Condition:
+              StringEquals:
+                kms:GrantIsForAWSResource: "true"
+                kms:ViaService: ec2.amazonaws.com
+
+  OpenSearchServiceDomain:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+      DomainName: 'meter-data-analysis'
+      EngineVersion: 'OpenSearch_1.0'
+      ClusterConfig:
+        DedicatedMasterEnabled: true
+        InstanceCount: '2'
+        ZoneAwarenessEnabled: true
+        InstanceType: 't3.small.search'
+      EBSOptions:
+        EBSEnabled: true
+        Iops: '0'
+        VolumeSize: '10'
+        VolumeType: 'gp2'
+      AccessPolicies:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: 'Allow'
+            Principal:
+              AWS: 
+                Fn::Join:
+                    - ''
+                    - - 'arn:aws:iam::'
+                      - !Ref AWS::AccountId
+                      - ':user/'
+                      - !Ref UserNameParameter              
+              
+            Action: 'es:*'
+            Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/meter-data-analysis/*
+          - Effect: "Allow"
+            Principal:
+              AWS: 
+                - !GetAtt FirehoseDeliveryRole1.Arn
+                - !GetAtt FirehoseDeliveryRole2.Arn
+                - !GetAtt FirehoseDeliveryRole3.Arn
+            Action: "es:*"
+            Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/meter-data-analysis/*
+      AdvancedOptions:
+        rest.action.multi.allow_explicit_index: 'true'
+        override_main_response_version: 'true'
+      NodeToNodeEncryptionOptions:
+        Enabled: true  
+      EncryptionAtRestOptions:
+        Enabled: true
+        KmsKeyId: !Ref MyKMSKey 
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions:
+          MasterUserName: !Ref OpenSearchUsername
+          MasterUserPassword: !Ref OpenSearchPassword
+      DomainEndpointOptions:
+        EnforceHTTPS: true
+   
+  FirehoseDeliveryRole1:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: FirehoseDeliveryPolicy-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:AbortMultipartUpload"
+                  - "s3:GetBucketLocation"
+                  - "s3:ListBucket"
+                  - "s3:ListBucketMultipartUploads"
+                Resource:
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
+              - Effect: Allow
+                Action: 
+                  - "es:DescribeElasticsearchDomain"
+                  - "es:DescribeElasticsearchDomains"
+                  - "es:DescribeElasticsearchDomainConfig"
+                  - "es:ESHttpPost"
+                  - "es:ESHttpPut"
+                Resource: 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/*'
+              
+              - Effect: Allow
+                Action: 
+                  - "es:ESHttpGet"
+                Resource: 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_all/_settings' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_cluster/stats' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/batteries-feeder-measurements/_mapping/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_nodes' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_nodes/*/stats' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_stats' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/batteries-feeder-measurements/_stats'
+                 
+
+  FirehoseDeliveryStream1:
+    Type: "AWS::KinesisFirehose::DeliveryStream"
+    # DependsOn: MyS3BucketSource
+    Properties:
+      DeliveryStreamName: estorage-batteries-measurements-openSearch
+      DeliveryStreamType: DirectPut
+      ElasticsearchDestinationConfiguration:
+        RoleARN: !GetAtt FirehoseDeliveryRole1.Arn
+        DomainARN: !GetAtt OpenSearchServiceDomain.Arn
+        IndexName: "batteries-feeder-measurements"
+        IndexRotationPeriod: "OneDay"
+        RetryOptions:
+          DurationInSeconds: 300
+        S3BackupMode: "AllDocuments"
+        S3Configuration:
+          BucketARN: !Sub "arn:aws:s3:::${SourceBucketName}"
+          Prefix: "storagetwin/"
+          RoleARN: !GetAtt FirehoseDeliveryRole1.Arn
+          BufferingHints:
+            IntervalInSeconds: 300
+            SizeInMBs: 5
+
+  FirehoseDeliveryRole2:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: FirehoseDeliveryPolicy2-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:AbortMultipartUpload"
+                  - "s3:GetBucketLocation"
+                  - "s3:ListBucket"
+                  - "s3:ListBucketMultipartUploads"
+                Resource:
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
+              - Effect: Allow
+                Action: 
+                  - "es:DescribeElasticsearchDomain"
+                  - "es:DescribeElasticsearchDomains"
+                  - "es:DescribeElasticsearchDomainConfig"
+                  - "es:ESHttpPost"
+                  - "es:ESHttpPut"
+                Resource: 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/*' 
+
+              - Effect: Allow
+                Action: 
+                  - "es:ESHttpGet"
+                Resource: 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_all/_settings' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_cluster/stats'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/batteries-feeder-measurements/_mapping/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_nodes'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_nodes/*/stats'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_stats'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/batteries-feeder-measurements/_stats'
+                  
+
+  FirehoseDeliveryStream2:
+    Type: "AWS::KinesisFirehose::DeliveryStream"
+    # DependsOn: MyS3BucketSource
+    Properties:
+      DeliveryStreamName: estorage-renewable-measurements-opensearch
+      DeliveryStreamType: DirectPut
+      ElasticsearchDestinationConfiguration:
+        RoleARN: !GetAtt FirehoseDeliveryRole2.Arn
+        DomainARN: !GetAtt OpenSearchServiceDomain.Arn
+        IndexName: "batteries-feeder-measurements"
+        IndexRotationPeriod: "OneDay"
+        RetryOptions:
+          DurationInSeconds: 300
+        S3BackupMode: "AllDocuments"
+        S3Configuration:
+          BucketARN: !Sub "arn:aws:s3:::${SourceBucketName}"
+          Prefix: "renewables-measurements/"
+          RoleARN: !GetAtt FirehoseDeliveryRole2.Arn
+          BufferingHints:
+            IntervalInSeconds: 300
+            SizeInMBs: 5
+
+  FirehoseDeliveryRole3:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: FirehoseDeliveryPolicy3-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:AbortMultipartUpload"
+                  - "s3:GetBucketLocation"
+                  - "s3:ListBucket"
+                  - "s3:ListBucketMultipartUploads"
+                Resource:
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
+              - Effect: Allow
+                Action: 
+                  - "es:DescribeElasticsearchDomain"
+                  - "es:DescribeElasticsearchDomains"
+                  - "es:DescribeElasticsearchDomainConfig"
+                  - "es:ESHttpPost"
+                  - "es:ESHttpPut"
+                Resource: 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/*'  
+                
+              - Effect: Allow
+                Action: 
+                  - "es:ESHttpGet"
+                Resource: 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_all/_settings' 
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_cluster/stats'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/batteries-feeder-measurements/_mapping/%FIREHOSE_POLICY_TEMPLATE_PLACEHOLDER%'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_nodes'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_nodes/*/stats'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/_stats'
+                  - !Join
+                    - ''
+                    - - 'arn:aws:es:'
+                      - !Ref 'AWS::Region'
+                      - ':'
+                      - !Ref 'AWS::AccountId'
+                      - ':domain/meter-data-analysis/batteries-feeder-measurements/_stats'
+                    
+
+  FirehoseDeliveryStream3:
+    Type: "AWS::KinesisFirehose::DeliveryStream"
+    # DependsOn: MyS3BucketSource
+    Properties:
+      DeliveryStreamName: estorage-feeder-measurements-opensearch
+      DeliveryStreamType: DirectPut
+      ElasticsearchDestinationConfiguration:
+        RoleARN: !GetAtt FirehoseDeliveryRole3.Arn
+        DomainARN: !GetAtt OpenSearchServiceDomain.Arn
+        IndexName: "batteries-feeder-measurements"
+        IndexRotationPeriod: "OneDay"
+        RetryOptions:
+          DurationInSeconds: 300
+        S3BackupMode: "AllDocuments"
+        S3Configuration:
+          BucketARN: !Sub "arn:aws:s3:::${SourceBucketName}"
+          Prefix: "feeder-measurements/"
+          RoleARN: !GetAtt FirehoseDeliveryRole3.Arn
+          BufferingHints:
+            IntervalInSeconds: 300
+            SizeInMBs: 5
+  
+ 

@@ -1,0 +1,230 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  SourceBucketName:
+    Type: String
+  DestinationBucketName:
+    Type: String
+  
+Resources:
+  LambdaFunctionForecastInputData:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: estorage-copy-forecastinputdata
+      Runtime: nodejs14.x
+      Handler: index.handler
+      Role: !GetAtt LambdaBasicExecutionRoleFors3.Arn
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref DestinationBucketName
+      Code:
+        ZipFile: |
+                  const aws = require('aws-sdk');
+                  aws.config.update({region: 'ap-south-1'});
+                  const s3 = new aws.S3({ apiVersion: '2006-03-01' });
+                  
+                  exports.handler = async (event) => {
+                      // TODO implement
+                      try{
+                      const BUCKET = process.env.BUCKET_NAME;
+                      console.log(event);
+                      console.log(JSON.stringify(event.Records[0].s3))
+                      const bucket = event.Records[0].s3.bucket.name;
+                      console.log(bucket);
+                      const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
+                      const params = {
+                          Bucket: `${BUCKET}/batteries-measurements-forecast/forecast-input`,
+                          CopySource:bucket+"/"+key,
+                          Key: key.substring(key.indexOf("/")+1),
+                      };
+                      console.log(params);
+                      
+                      const copyforecastfile=await s3.copyObject(params).promise();
+                      console.log(copyforecastfile);
+                      }
+                      catch(err) {
+                          console.log(err);
+                      }
+                  
+                  
+                      const response = {
+                          statusCode: 200,
+                          body: JSON.stringify('Hello from Lambda!'),
+                      };
+                      return response;
+                  };
+  LambdaBasicExecutionRoleFors3:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      
+      Policies:
+        - PolicyName: LambdaS3ReadWriteAccess-meter-data-analysis
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:PutObject
+                Resource:
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
+                  - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}" 
+                  - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}/*" 
+
+  ##################### S3 EVENT NOTIFICATION SETUP ################################               
+  LambdaInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    DependsOn: 
+      - LambdaFunctionForecastInputData
+    Properties:
+      FunctionName: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:estorage-copy-forecastinputdata'
+      Action: 'lambda:InvokeFunction'
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub 'arn:aws:s3:::${SourceBucketName}'
+      
+  S3LambdaPermissionsPolicyForEvent:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:PutBucketNotification'
+              - 's3:GetBucketNotification'
+              - 's3:ListBucket'
+              - 's3-object-lambda:*'
+            Resource:
+              - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
+              - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
+              - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}" 
+              - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}/*" 
+  LambdaRoleForEvent:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Ref S3LambdaPermissionsPolicyForEvent
+
+  CreateEventNotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: CreateEventNotificationFunction
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaRoleForEvent.Arn
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref SourceBucketName
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          
+          def create_s3_bucket_notification(bucket_name, lambda_function_arn):
+              s3 = boto3.resource('s3')
+            
+              events = ['s3:ObjectCreated:*']
+              
+              notification_config = {
+                  'LambdaFunctionConfigurations': [
+                      {
+                          'LambdaFunctionArn': lambda_function_arn,
+                          'Events': events,
+                          'Filter': {
+                              'Key': {
+                                  'FilterRules': [
+                                      {
+                                          'Name': 'prefix',
+                                          'Value': 'ebatteries_measurements_agg_qry/'
+                                      }
+                                  ]
+                              }
+                          }
+                      }
+                  ]
+              }
+              
+              # Apply the notification configuration to the bucket
+              bucket_notification = s3.BucketNotification(bucket_name)
+              response = bucket_notification.put(NotificationConfiguration=notification_config)
+              
+              return response
+          
+          def lambda_handler(event, context):
+              region = os.environ['AWS_REGION']  # Get the AWS region from environment variables
+              account_id = context.invoked_function_arn.split(":")[4]  # Extract account ID from Lambda ARN
+              bucket_name = bucket_name = os.environ['BUCKET_NAME']
+              lambda_function_arn = f'arn:aws:lambda:{region}:{account_id}:function:estorage-copy-forecastinputdata'
+              
+              response = create_s3_bucket_notification(bucket_name, lambda_function_arn)
+              print("Bucket notification configuration response:", response)
+              
+              return {
+                  "statusCode": 200,
+                  "body": "S3 bucket notification configuration created."
+              }
+              
+      Timeout: 900
+
+  MyLambdaRoleForEventNotification:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+
+      Policies:
+        - PolicyName: MyLambdaPolicy-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - sns:Publish
+                  - lambda:InvokeFunction
+                Resource:
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
+                  - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}" 
+                  - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}/*"
+                  - Fn::Sub: "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:CreateEventNotificationFunction"
+    
+  MySchedulerScheduleForS3EventNotification:
+    Type: AWS::Scheduler::Schedule
+    DependsOn: CreateEventNotificationFunction
+    Properties:
+      Description: "Scheduler for creating predictor"
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      GroupName: "default"
+      Name: "EventNotificationForS3Bucket"
+      ScheduleExpression: "rate(10000 days)"
+      ScheduleExpressionTimezone: "UTC"
+      State: "ENABLED"
+      Target:
+        Arn: !GetAtt CreateEventNotificationFunction.Arn
+        RoleArn: !GetAtt MyLambdaRoleForEventNotification.Arn                  

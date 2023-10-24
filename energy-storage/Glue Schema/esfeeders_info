@@ -1,0 +1,37 @@
+[
+  {
+    "Name": "feederid",
+    "Type": "bigint",
+    "Comment": ""
+  },
+  {
+    "Name": "connectedsubstation",
+    "Type": "string",
+    "Comment": ""
+  },
+  {
+    "Name": "voltagelevelvolts",
+    "Type": "bigint",
+    "Comment": ""
+  },
+  {
+    "Name": "installedlocationlat",
+    "Type": "double",
+    "Comment": ""
+  },
+  {
+    "Name": "installedlocationlong",
+    "Type": "double",
+    "Comment": ""
+  },
+  {
+    "Name": "currentamperes",
+    "Type": "bigint",
+    "Comment": ""
+  },
+  {
+    "Name": "powervoltampere",
+    "Type": "bigint",
+    "Comment": ""
+  }
+]

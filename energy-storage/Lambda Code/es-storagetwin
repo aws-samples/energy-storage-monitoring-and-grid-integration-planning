@@ -1,0 +1,88 @@
+var AWS=require('aws-sdk');
+AWS.config.update({region: '<region>'});
+var at=new AWS.Athena();
+var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
+var sqsURL= "https://sqs.<region>.amazonaws.com/<AccountNo>/es-batteriesformeasurements";
+
+exports.handler = async (event) => {
+    // TODO implement
+    /*   
+     var atparams={
+         QueryString:"select * from AwsDataCatalog.energystorage.esbetteries_info",
+         ResultConfiguration: {
+             OutputLocation:"s3://<BucketName>/energystorage"
+            }
+     };
+    
+
+   at.startQueryExecution(atparams, function(err, data) {
+          if (err) console.log(err, err.stack); // an error occurred
+          else     console.log(data);           // successful response
+        });
+        */
+    
+    var atStart=event;
+    //event.input.QueryExecutionId;
+    //var atStart=await at.startQueryExecution(atparams).promise();
+    //console.log(atStart);
+    
+    var atresultparams={
+        QueryExecutionId:atStart.QueryExecution.QueryExecutionId
+        //QueryExecutionId:"afd86959-9ea6-4025-a4b3-2e9754a8702f"
+    }
+    var qresults=await at.getQueryResults(atresultparams).promise();
+   
+    //console.log(qresults);
+    console.log(qresults.ResultSet.Rows[0]);
+    
+    var arResults=qresults.ResultSet.Rows;
+    console.log(arResults.length)
+    
+    for (var i = 1; i < arResults.length; i++) {
+        var batteryid=arResults[i].Data[0].VarCharValue
+        var locationid=arResults[i].Data[1].VarCharValue
+        var ecapacitykwh=arResults[i].Data[2].VarCharValue
+        var maxpowerkw=arResults[i].Data[3].VarCharValue
+        var maxcurrentamperes=arResults[i].Data[4].VarCharValue
+        var installlat=arResults[i].Data[5].VarCharValue
+        var installlong=arResults[i].Data[6].VarCharValue
+        var nomdcvoltagevolts=arResults[i].Data[7].VarCharValue
+        var connsubstation=arResults[i].Data[8].VarCharValue
+        var areaname=arResults[i].Data[9].VarCharValue
+
+        var curchargelevel= arResults[i].Data[10].VarCharValue;
+        //var curchargelevelkwh=Math.floor(Math.random() * 101); // returns a random number bwteen 0 and 
+        console.log(batteryid)
+        
+        var paramstoSend={
+  				    "batteryid":batteryid,
+  				    "ecapacitykwh":ecapacitykwh,
+  				    "maxpowerkw":maxpowerkw,
+  				    "maxcurrentamperes":maxcurrentamperes,
+  				    "nomdcvoltagevolts":nomdcvoltagevolts,
+  				    "installlat":installlat,
+  				    "installlong":installlong,
+  				    "locationid":locationid,
+  				    "connsubstation":connsubstation,
+  				    "areaname":areaname,
+  				    "curchargelevelkwh":curchargelevel
+  				}
+                
+                var sqsParams={
+                    MessageBody: JSON.stringify(paramstoSend),
+                    QueueUrl: sqsURL
+                };
+                console.log(sqsParams);
+                
+                await sqs.sendMessage(sqsParams).promise();
+                
+    }
+    
+    
+    const response = {
+        statusCode: 200,
+        body: JSON.stringify('Hello from Lambda!'),
+    };
+    return response;
+};
+

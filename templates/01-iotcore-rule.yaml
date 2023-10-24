@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  myIoTTopicRule1:
+    Type: "AWS::IoT::TopicRule"
+    Properties:
+      RuleName: "batteriesmeasurements_to_dynamodb"
+      TopicRulePayload:
+        Actions:
+          - DynamoDB:
+              HashKeyField: "batteryid"
+              HashKeyType: "NUMBER"
+              HashKeyValue: "${batteryid}"
+              RoleArn: !GetAtt myDynamoDBRole.Arn
+              TableName: !Ref myDynamoDBTable
+              PayloadField: "payload"
+        Sql: "SELECT batteryid, measureddatetime, ecapacitykwh, curchargelevelkwh, newcurrentamperes, newvoltagevolts, installlat, installlong FROM 'topic_1' WHERE thismessagetype='storagemeasurement'"
+  myDynamoDBTable: 
+    Type: AWS::DynamoDB::Table  
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: "batteryid"
+          AttributeType: "N"
+      KeySchema: 
+        - 
+          AttributeName: "batteryid"
+          KeyType: "HASH"
+      TableName: "batteries-measurements"
+      BillingMode: "PAY_PER_REQUEST"
+      Tags:
+        - Key: "project"
+          Value: "energystorage"
+      SSESpecification:
+        SSEEnabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+  myDynamoDBRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "iot.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "my-dynamodb-policy-meter-data-analaysis"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "dynamodb:PutItem"
+                Resource: !GetAtt myDynamoDBTable.Arn
+
+  myIoTTopicRule2:
+    Type: "AWS::IoT::TopicRule"
+    Properties:
+      RuleName: "batterymeasurements_to_firehose_opensearch"
+      TopicRulePayload:
+        Actions:
+          - Firehose:
+              RoleArn: !GetAtt MyFirehoseRole.Arn
+              DeliveryStreamName: "estorage-batteries-measurements-openSearch"
+        Sql: select * from 'topic_1' where thismessagetype="storagemeasurement"
+  MyFirehoseRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service: "iot.amazonaws.com"
+              Action: "sts:AssumeRole"
+        Policies:
+          - PolicyName: "firehose-policy-meter-data-analysis"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "firehose:PutRecord"
+                    - "firehose:PutRecordBatch"
+                  Resource: !Sub arn:aws:firehose:${AWS::Region}:${AWS::AccountId}:deliverystream/estorage-batteries-measurements-openSearch
+                   
+              

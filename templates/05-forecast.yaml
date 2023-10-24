@@ -1,0 +1,462 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  SourceBucketName:
+    Type: String
+  DestinationBucketName:
+    Type: String
+  # DataBucketForTesting:
+  #   Type: String 
+Resources:
+  MyForecastExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ForecastExecutionRoleMeterDataAnalysis
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - forecast.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: ForecastExecutionPolicyFF-meter-data-analysis
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:DeleteObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
+                  - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}" 
+                  - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}/*" 
+
+
+  StepFunctionExecutionRoleFF:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+      Policies:
+        - PolicyName: StepFunctionExecutionPolicyFF-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "glue:GetDatabase"
+                  - "glue:GetTable"
+                  - "glue:UpdateTable"
+                  - "glue:CreateTable"
+                  - "s3:GetBucketLocation"
+                  - "s3:ListBucket"
+                  - "s3:ListAllMyBuckets"
+                  - "s3:GetBucketAcl"
+                  - "cloudwatch:PutMetricData"
+                  - "logs:PutLogEvents"
+                  - "athena:StartQueryExecution"
+                  - "athena:GetQueryExecution"
+                  - "athena:GetQueryResults"
+                  - "lambda:InvokeFunction"
+                  - "forecast:CreateForecast"
+                  - "forecast:CreateDataset"
+                  - "forecast:CreateDatasetGroup"
+                  - "forecast:CreateDatasetImportJob"
+                  - "forecast:CreateForecastExportJob"
+                  - "iam:PassRole"
+                Resource:
+                  - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
+                  - !Sub 'arn:aws:s3:::${DestinationBucketName}'
+                  - !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+                  - !Sub 'arn:aws:s3:::${SourceBucketName}'
+                  # - !Sub 'arn:aws:s3:::${DataBucketForTesting}/*'
+                  # - !Sub 'arn:aws:s3:::${DataBucketForTesting}'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog/*'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/energystorage1'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/energystorage1/*'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/energystorage'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/energystorage/*'
+                  - !Sub 'arn:aws:athena:${AWS::Region}:${AWS::AccountId}:workgroup/primary'
+                  - !Sub 'arn:aws:athena:${AWS::Region}:${AWS::AccountId}:workgroup/primary/query/*'
+                  - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:CreatePredictorFunctionFF:$LATEST'
+                  - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:esgenerateuidforforecastdataset:$LATEST'
+                  - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:es-generateuid-for-forecast-dataset:$LATEST'
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws-glue*'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:dataset-group/estorage_forecast_dataset_group'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:dataset/estorage_forecast_dss'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:dataset-import-job/estorage_forecast_dss/*'
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:role/ForecastExecutionRoleMeterDataAnalysis'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:predictor/estorage_predictor'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:forecast/estorageforecast*'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:forecast-export-job/estorageforecast*'
+
+  CreatePredictorRoles:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: PredictorAccessPolicy-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                  - "forecast:CreateForecast"
+                  - "forecast:CreateDataset"
+                  - "forecast:CreateDatasetGroup"
+                  - "forecast:CreateDatasetImportJob"
+                  - "forecast:CreateForecastExportJob"
+                  - "forecast:CreatePredictor"
+                Resource: 
+                  - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:es-generateuid-for-forecast-dataset'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:dataset-group/estorage_forecast_dataset_group'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:dataset/estorage_forecast_dss'
+                  - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:predictor/estorage_predictor*'
+
+        
+  CreatePredictorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: CreatePredictorFunctionFF
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt CreatePredictorRoles.Arn
+      Code:
+        ZipFile: |
+          import os
+          import boto3
+
+          def lambda_handler(event, context):
+              try:
+                  forecast_client = boto3.client('forecast')
+                  region = os.environ['AWS_REGION']  # Get the AWS region from environment variables
+                  account_id = context.invoked_function_arn.split(":")[4]  # Extract account ID from Lambda ARN
+                  dataset_group_arn = f'arn:aws:forecast:{region}:{account_id}:dataset-group/estorage_forecast_dataset_group'
+                  response = forecast_client.create_predictor(
+                      PredictorName='estorage_predictor',
+                      ForecastHorizon=1,
+                      PerformAutoML=True,
+                      PerformHPO=False,
+                      InputDataConfig={
+                          'DatasetGroupArn': dataset_group_arn,
+                          'SupplementaryFeatures': [
+                              {
+                                  'Name': 'holiday',
+                                  'Value': 'IN'  # Holiday value for India
+                              },
+                              {
+                                  'Name': 'weather',
+                                  'Value': 'true'
+                              }
+                          ]
+                      },
+                      FeaturizationConfig={
+                          'ForecastFrequency': 'D'
+                      }
+                  )
+              
+                  predictor_arn = response['PredictorArn']
+              
+                  # Prepare the response data for success
+                  response_data = {
+                      'PredictorArn': predictor_arn
+                  }
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': response_data
+                  }
+                  
+              except Exception as e:
+                  response_data = {
+                      'Error': str(e)
+                  }
+                  return {
+                      'statusCode': 500,
+                      'body': response_data
+                  }
+              
+      Timeout: 900
+      TracingConfig:
+        Mode: Active
+      Environment:
+        Variables:
+          DatasetGroupArn: !Sub arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:dataset-group/estorage_forecast_dataset_group
+
+  MyStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    DependsOn:
+      - MyForecastExecutionRole
+      - CreateFunctionEsGenerateuidForForecastDataset
+      - ForecastDataset2
+      # - MyS3BucketSource
+      # - MyS3BucketDestination
+    Properties:
+      StateMachineName: estorage-forecast-dataprep-ff
+      DefinitionString:
+        Fn::Sub:
+          - |
+           {
+              "Comment": "A description of my state machine",
+              "StartAt": "Athena StartQueryExecution",
+              "States": {
+                "Athena StartQueryExecution": {
+                  "Type": "Task",
+                  "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
+                  "Parameters": {
+                    "QueryString": "select e1.batteryid item_id,date_format(cast(measuredttm as timestamp),'%Y-%m-%d %H')||':00:00' timestamp,max(curchargelevelkwh) target_value,cast(installlat as varchar)||'_-'||cast(installlong as varchar) loc from awsdatacatalog.energystorage.batteries_measurements e1 where position('.' in cast(installlat as varchar))=3 group by e1.batteryid,date_format(cast(measuredttm as timestamp),'%Y-%m-%d %H')||':00:00',cast(installlat as varchar)||'_-'||cast(installlong as varchar) order by date_format(cast(measuredttm as timestamp),'%Y-%m-%d %H')||':00:00' desc",
+                    "ResultConfiguration": {
+                      "OutputLocation": "${AthenaOutputLocation}"
+                    },
+                    "WorkGroup": "primary"
+                  },
+                  "Next": "Wait"
+                },
+                "Wait": {
+                  "Type": "Wait",
+                  "Seconds": 180,
+                  "Next": "Lambda Invoke"
+                },
+                "Lambda Invoke": {
+                  "Type": "Task",
+                  "Resource": "arn:aws:states:::lambda:invoke",
+                  "OutputPath": "$.Payload",
+                  "Parameters": {
+                    "Payload.$": "$",
+                    "FunctionName": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:es-generateuid-for-forecast-dataset:$LATEST"
+                  },
+                  "Retry": [
+                    {
+                      "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException"
+                      ],
+                      "IntervalSeconds": 2,
+                      "MaxAttempts": 6,
+                      "BackoffRate": 2
+                    }
+                  ],
+                  "Next": "CreateDatasetImportJob"
+                },
+                "CreateDatasetImportJob": {
+                  "Type": "Task",
+                  "Parameters": {
+                    "DataSource": {
+                      "S3Config": {
+                        "Path": "${ForecastS3InputLocation}",
+                        "RoleArn": "arn:aws:iam::${AWS::AccountId}:role/ForecastExecutionRoleMeterDataAnalysis"
+                      }
+                    },
+                    "TimeZone": "Asia/Kolkata",
+                    "DatasetArn": "arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:dataset/estorage_forecast_dss",
+                    "DatasetImportJobName.$": "$.body.dsuid"
+                  },
+                  "Resource": "arn:aws:states:::aws-sdk:forecast:createDatasetImportJob",
+                  "Next": "Wait (1)"
+                },
+                "Wait (1)": {
+                  "Type": "Wait",
+                  "Seconds": 1800,
+                  "Next": "CreatePredictor-1"
+                },
+                "CreatePredictor-1": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:CreatePredictorFunctionFF:$LATEST",
+                    "Next": "Wait (2)"
+                },
+                "Wait (2)": {
+                  "Type": "Wait",
+                  "Seconds": 5400,
+                  "Next": "Lambda Invoke (1)"
+                },
+                "Lambda Invoke (1)": {
+                  "Type": "Task",
+                  "Resource": "arn:aws:states:::lambda:invoke",
+                  "OutputPath": "$.Payload",
+                  "Parameters": {
+                    "Payload.$": "$",
+                    "FunctionName": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:es-generateuid-for-forecast-dataset:$LATEST"
+                  },
+                  "Retry": [
+                    {
+                      "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException",
+                        "Lambda.SdkClientException"
+                      ],
+                      "IntervalSeconds": 2,
+                      "MaxAttempts": 6,
+                      "BackoffRate": 2
+                    }
+                  ],
+                  "Next": "CreateForecast"
+                },
+                "CreateForecast": {
+                  "Type": "Task",
+                  "Resource": "arn:aws:states:::aws-sdk:forecast:createForecast",
+                  "Parameters": {
+                    "ForecastName.$": "$.body.dsuid",
+                    "PredictorArn": "arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:predictor/estorage_predictor"
+                  },
+                  "ResultPath": "$.forecastResult",
+                  "Next": "Wait (3)"
+                },
+                "Wait (3)": {
+                  "Type": "Wait",
+                  "Seconds": 3600,
+                  "Next": "CreateForecastExportJob"
+                },
+                "CreateForecastExportJob": {
+                  "Type": "Task",
+                  "End": true,
+                  "Parameters": {
+                    "Destination": {
+                      "S3Config": {
+                        "Path": "${ForecastS3OutputLocation}",
+                        "RoleArn": "arn:aws:iam::${AWS::AccountId}:role/ForecastExecutionRoleMeterDataAnalysis"
+                      }
+                    },
+                    "ForecastArn.$": "States.Format('arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:forecast/{}', $.body.dsuid)",
+                    "ForecastExportJobName.$": "$.body.dsuid"
+                  },
+                  "Resource": "arn:aws:states:::aws-sdk:forecast:createForecastExportJob"
+                }
+              }
+            }
+          - AthenaOutputLocation: !Sub "s3://${SourceBucketName}/ebatteries_measurements_agg_qry/"
+            ForecastS3InputLocation: !Sub "s3://${DestinationBucketName}/batteries-measurements-forecast/forecast-input/"
+            ForecastS3OutputLocation: !Sub "s3://${DestinationBucketName}/batteries-measurements-forecast/forecast-output/"
+          
+      RoleArn: !GetAtt StepFunctionExecutionRoleFF.Arn
+
+  ForecastDataset2:
+    Type: AWS::Forecast::Dataset
+    Properties:
+      DatasetName: estorage_forecast_dss
+      Domain: CUSTOM # Change to the appropriate domain (e.g., RETAIL, EC2_CAPACITY, etc.)
+      DatasetType: TARGET_TIME_SERIES # Change if using a different dataset type
+      DataFrequency: "H" # Change to the appropriate data frequency (e.g., H, D, W, M)
+      Schema:
+        Attributes:
+          - AttributeName: item_id
+            AttributeType: string
+          - AttributeName: timestamp
+            AttributeType: timestamp
+          - AttributeName: target_value
+            AttributeType: float
+          - AttributeName: loc
+            AttributeType: geolocation
+
+  ForecastDatasetGroup:
+    Type: "AWS::Forecast::DatasetGroup"
+    Properties:
+      DatasetGroupName: estorage_forecast_dataset_group
+      Domain: CUSTOM
+      DatasetArns:
+        - !Ref ForecastDataset2
+
+
+  LambdaExecutionRoleEsGenerateuidForForecastDataset:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AmazonS3FullAccess-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                  - 's3:PutBucketNotification'
+                  - 's3:GetBucketNotification'
+                  - 's3:ListBucket'
+                  - 's3-object-lambda:*'
+      
+                Resource:
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
+                  - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
+                  - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}" 
+                  - Fn::Sub: "arn:aws:s3:::${DestinationBucketName}/*" 
+        - PolicyName: AWSLambdaBasicExecutionRole-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "logs:CreateLogGroup"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group/aws/lambda/es-generateuid-for-forecast-dataset*"
+
+              - Effect: Allow
+                Action: 
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:  !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group/aws/lambda/es-generateuid-for-forecast-dataset:log-stream/es-generateuid-for-forecast-dataset"
+
+
+
+        - PolicyName: AmazonAthenaFullAccess-meter-data-analysis
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "athena:StartQueryExecution"
+                  - "athena:GetQueryExecution"
+                  - "athena:GetQueryResults"
+                Resource: 
+                  - Fn::Sub: "arn:aws:athena:${AWS::Region}:${AWS::AccountId}:workgroup/primary"
+                  - Fn::Sub: "arn:aws:athena:${AWS::Region}:${AWS::AccountId}:workgroup/primary/query/*"
+
+  CreateFunctionEsGenerateuidForForecastDataset:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: es-generateuid-for-forecast-dataset
+      Runtime: nodejs14.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRoleEsGenerateuidForForecastDataset.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+              var strdatetime;
+              var readTime=new Date(); // adding interval mins
+              strdatetime="estorageforecast"+readTime.getFullYear()+(readTime.getMonth()+1).toString().padStart(2,"0")+(readTime.getDate()).toString().padStart(2,"0")+(readTime.getHours()).toString().padStart(2,"0")+(readTime.getMinutes()).toString().padStart(2,"0")+(readTime.getSeconds().toString())
+              console.log(strdatetime)
+              const response = {
+                  statusCode: 200,
+                  body: {dsuid:strdatetime}
+              };
+              console.log(response);
+              return response;
+          };      
+
+

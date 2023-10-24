@@ -1,0 +1,94 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  OpenSearchUserName:
+    Type: String
+    Description: Username for OpenSearch
+  OpenSearchUserPassword:
+    Type: String
+    Description: Password for the OpenSearch user
+    MinLength: 8   # Minimum password length
+    MaxLength: 64  # Maximum password length
+    AllowedPattern: "^(?=.*[a-zA-Z0-9])(?=.*[^a-zA-Z0-9]).*$"  # Only alphanumeric characters are allowed
+    ConstraintDescription: "Password must be between 8 and 64 characters and contain only alphanumeric characters."
+    NoEcho: true # This ensures the password is not displayed in the CloudFormation console
+  IAMUserName:
+    Type: String
+    Description: Username with admin access
+  FireHoseOutputBucket:
+    Type: String
+    Description: Name of the S3 bucket
+  ForecastOutputBucket:
+    Type: String
+    Description: Name of the S3 bucket
+  # DataBucketForTesting:
+  #   Type: String
+  #   Description: Name of the S3 bucket
+
+Resources: 
+  MyS3BucketSource:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref FireHoseOutputBucket
+      
+  MyS3BucketDestination:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref ForecastOutputBucket
+    
+  # MyS3BucketTesting:
+  #   Type: 'AWS::S3::Bucket'
+  #   Properties:
+  #     BucketName: !Ref DataBucketForTesting
+
+  IotCoreRule:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "https://testinng-stack-111.s3.ap-south-1.amazonaws.com/01-iotcore-rule.yaml"    
+        
+  OpenSearch:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "https://testinng-stack-111.s3.ap-south-1.amazonaws.com/02-firehose-opensearch.yaml"    
+      Parameters:
+        SourceBucketName: !Ref FireHoseOutputBucket
+        DestinationBucketName: !Ref ForecastOutputBucket
+        # DataBucketForTesting: !Ref DataBucketForTesting
+        OpenSearchUsername: !Ref OpenSearchUserName
+        OpenSearchPassword: !Ref OpenSearchUserPassword
+        UserNameParameter: !Ref IAMUserName
+  
+  Glue:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "https://testinng-stack-111.s3.ap-south-1.amazonaws.com/03-glue.yaml"    
+      Parameters:
+        SourceBucketName: !Ref FireHoseOutputBucket
+        DestinationBucketName: !Ref ForecastOutputBucket
+
+  EventNotification:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "https://testinng-stack-111.s3.ap-south-1.amazonaws.com/04-eventnotification.yaml"    
+      Parameters:
+        SourceBucketName: !Ref FireHoseOutputBucket
+        DestinationBucketName: !Ref ForecastOutputBucket     
+
+  ForeCast:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "https://testinng-stack-111.s3.ap-south-1.amazonaws.com/05-forecast.yaml"    
+      Parameters:
+        SourceBucketName: !Ref FireHoseOutputBucket
+        DestinationBucketName: !Ref ForecastOutputBucket
+        # DataBucketForTesting: !Ref DataBucketForTesting
+  
+  
+  
+  
+  
+  
+  

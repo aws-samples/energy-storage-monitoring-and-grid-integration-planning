@@ -1,0 +1,100 @@
+var AWS=require('aws-sdk');
+AWS.config.update({region: '<region>'});
+var at=new AWS.Athena();
+var kin=new AWS.Firehose({apiVersion: '2015-08-04'});
+
+exports.handler = async (event) => {
+  
+    var atStart=event;
+    //event.input.QueryExecutionId;
+    //var atStart=await at.startQueryExecution(atparams).promise();
+    console.log(JSON.stringify(event));
+    console.log(atStart.QueryExecution.QueryExecutionId);
+    
+    var atresultparams={
+        QueryExecutionId:atStart.QueryExecution.QueryExecutionId
+    }
+    var qresults=await at.getQueryResults(atresultparams).promise();
+   
+    //console.log(qresults);
+    console.log(qresults.ResultSet.Rows[0]);
+    
+    var arResults=qresults.ResultSet.Rows;
+    console.log(arResults.length);
+    
+    var feederid,connectedsubstation,voltagelevelkv,installedlocationlat,installedlocationlong,currentampere,powerkva;
+    var readTime,strReadTime,ldf_kw,ldf_kva,n_pf,n_kw,n_kva,n_kwh_cnsmptn,n_kvah_cnsmptn,n_vltg,n_crrnt,vltg_lwr_lmt,vltg_uppr_lmt,n_frqncy;
+    
+    for (var i = 1; i < arResults.length; i++) {
+        feederid=arResults[i].Data[0].VarCharValue;
+        connectedsubstation=arResults[i].Data[1].VarCharValue;
+        voltagelevelkv=(arResults[i].Data[2].VarCharValue)/1000;
+        installedlocationlat=arResults[i].Data[3].VarCharValue;
+        installedlocationlong=arResults[i].Data[4].VarCharValue;
+        currentampere=arResults[i].Data[5].VarCharValue;
+        powerkva=(arResults[i].Data[6].VarCharValue)/1000;
+        
+        readTime=new Date(); // adding interval mins
+        strReadTime=readTime.getFullYear()+"-"+(readTime.getMonth()+1).toString().padStart(2,"0")+"-"+(readTime.getDate()).toString().padStart(2,"0")+" "+(readTime.getHours()).toString().padStart(2,"0")+":"+(readTime.getMinutes()).toString().padStart(2,"0")+":00";
+        //console.log(strReadTime);
+        ldf_kw=Math.random()*10; //Math.random generates number between 0 and 1, and hence multiplying with 10
+        ldf_kva=Math.random()*15; //KVAH value should be greater than KWH, so multiplying 15 instead of 10
+        
+        n_pf=(Math.random() * (0.99 - 0.80) + 0.80).toFixed(2); // getting a random value for PF between 0.8 and 0.99
+        
+        n_kw=(powerkva*ldf_kw/10).toFixed(2);
+        n_kva=(n_kw/n_pf).toFixed(2);
+        
+        //p_kwh_rdng=n_kwh_rdng;// assigning kwh reading to another variable, so it becomes the previous read
+        //p_kvah_rdng=n_kvah_rdng;
+        
+        //n_kwh_rdng=Math.round(p_kwh_rdng+(inData.connLoad*0.25*ldf_kw)); //assuming 25% usage at that load and hence multiplying by 0.25
+        //n_kwh_cnsmptn=n_kwh_rdng-p_kwh_rdng;
+        n_kwh_cnsmptn=Math.round(powerkva*0.25*ldf_kw);
+        
+        n_kvah_cnsmptn=Math.round(n_kwh_cnsmptn/n_pf); // dividing kwh consumption by PF to arrive at KVAH consumption
+        //n_kvah_rdng=Math.round(p_kvah_rdng+n_kvah_cnsmptn);
+          
+        vltg_lwr_lmt= voltagelevelkv*0.9; // setting lower limit of -10% for random value to be picked up
+        vltg_uppr_lmt=voltagelevelkv*1.1; // setting upper limit of +10% for random value to be picked up;
+        
+        n_vltg=((Math.random() * (vltg_uppr_lmt - vltg_lwr_lmt) + vltg_lwr_lmt)).toFixed(3); // getting a random value for voltage in KV between lower and upper limits
+        n_crrnt=(n_kva/n_vltg).toFixed(2);
+        
+        n_frqncy=50*n_vltg/voltagelevelkv; //frequency variation proportionate to voltage variation
+        
+        var osdata={measureddatetime:strReadTime,
+                    feederid:feederid,
+                    freadpowerkw:n_kw,
+                    freadpowerkva:n_kva,
+                    fwhunits:n_kwh_cnsmptn,
+                    ffrequency:n_frqncy,
+                    connectedsubstation:connectedsubstation,
+                    fvoltagekv:voltagelevelkv,
+                    installlocation:{lat:installedlocationlat,lon:installedlocationlong},
+                    finstalllat:installedlocationlat,
+                    finstalllong:installedlocationlong,
+                    fcurrentamperes:currentampere,
+                    fkvahunits:n_kvah_cnsmptn,
+                    fpf:n_pf,
+                    thismessagetype:'feedermeasurement',
+                    fratedpowerkva:powerkva};
+            
+        console.log(osdata);
+            
+        var kinparams={
+        DeliveryStreamName:'estorage-feeder-measurements-opensearch',
+        Record:{Data:Buffer.from(JSON.stringify(osdata))}
+        };
+        
+        console.log(kinparams);
+        await kin.putRecord(kinparams).promise();
+    
+};
+ const response = {
+        statusCode: 200,
+        body: JSON.stringify('Hello from Lambda!'),
+    };
+    return response;
+};
+

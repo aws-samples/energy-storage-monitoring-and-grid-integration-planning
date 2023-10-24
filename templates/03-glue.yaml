@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  SourceBucketName:
+    Type: String
+  DestinationBucketName:
+    Type: String
+  
+    
+Resources:
+  
+  MyGlueDatabase:
+    Type: 'AWS::Glue::Database'
+    Properties:
+      CatalogId: !Sub ${AWS::AccountId}
+      DatabaseInput:
+        Name: energystorage1
+
+  MyGlueRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: MyGlueRoleForEnergyStorage
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "glue.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: MyGluePolicyForEnergyStorage
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                  - "glue:GetDatabase"
+                  - "glue:GetTable"
+                  - "glue:UpdateTable"
+                  - "glue:CreateTable"
+                  - "s3:GetBucketLocation"
+                  - "s3:ListBucket"
+                  - "s3:ListAllMyBuckets"
+                  - "s3:GetBucketAcl"
+                  - "cloudwatch:PutMetricData"
+                  - "logs:PutLogEvents"
+                  - "athena:StartQueryExecution"
+                  - "athena:GetQueryExecution"
+                  - "athena:GetQueryResults"
+                Resource:
+                  - !Sub 'arn:aws:s3:::${DestinationBucketName}/*'
+                  - !Sub 'arn:aws:s3:::${DestinationBucketName}'
+                  - !Sub 'arn:aws:${AWS::Region}:${AWS::AccountId}:log-group:/aws-glue/crawlers'
+                  - !Sub 'arn:aws:${AWS::Region}:${AWS::AccountId}:log-group:/aws-gluecrawlers:log-stream:batteriesforecast'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog/*'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/energystorage1'
+                  - !Sub 'arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/energystorage1/*'
+                  - !Sub 'arn:aws:athena:${AWS::Region}:${AWS::AccountId}:workgroup/primary'
+                  - !Sub 'arn:aws:athena:${AWS::Region}:${AWS::AccountId}:workgroup/primary/query/*'
+
+  MyGlueCrawler:
+    Type: 'AWS::Glue::Crawler'
+    DependsOn: 
+     - MyGlueRole
+    #  - MyS3BucketDestination
+    Properties:
+      Name: batteriesforecast
+      Role: !GetAtt MyGlueRole.Arn
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/MyGlueRoleForEnergyStorage"
+      DatabaseName: energystorage1
+      Targets:
+        S3Targets:
+          - Path: !Sub "s3://${DestinationBucketName}/batteries-measurements-forecast/forecast-output/"

@@ -1,0 +1,4 @@
+locationid,batteryid,manufacturer,model,energycapacityKWh,maximumpowerKW,maxDCcurrentAmperes,noofracks,batterychemistry,installedlocationlat,installedlocationlong,voltageclass,nominalDCvoltagevolts,connectedsubstation,areaname,minoperatingtemperature,maxoperatingtemperature,manufactureddate
+1122,112201,GE,Energy RSU-4000,4184,1200,1600,20,Lithium-Ion,10.091853,77.068155,1500,1300,PATTALINE-11KV,PATTALINE,-40,50,26-jan-2020
+1123,112302,GE,Mid-Power,3700,960,1280,54,Lithium-Ion,10.087283,77.072289,1000,814,MATTUPETTY-11KV,MATTUPETTY,-25,50,15-aug-2018
+2211,221101,GE,High-Power,2500,720,960,40,Lithium-Ion,10.077721,77.059993,1000,814,MOOLAKADAI-22KV,MOOLAKADAI,-25,50,02-jun-2021

@@ -1,0 +1,31 @@
+[
+  {
+    "Name": "connectedsubstation",
+    "Type": "string",
+    "Comment": ""
+  },
+  {
+    "Name": "farmid",
+    "Type": "bigint",
+    "Comment": ""
+  },
+  {
+    "Name": "generationcapacitykva",
+    "Type": "bigint"
+  },
+  {
+    "Name": "generationtype",
+    "Type": "string",
+    "Comment": ""
+  },
+  {
+    "Name": "installedlocationlat",
+    "Type": "double",
+    "Comment": ""
+  },
+  {
+    "Name": "installedlocationlong",
+    "Type": "double",
+    "Comment": ""
+  }
+]

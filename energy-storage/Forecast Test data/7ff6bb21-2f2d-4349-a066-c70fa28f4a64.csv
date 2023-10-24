@@ -1,0 +1,3 @@
+"batteryid","locationid","energycapacitykwh","maximumpowerkw","maxdccurrentamperes","installedlocationlat","installedlocationlong","nominaldcvoltagevolts","connectedsubstation","areaname","newchargelevelkwh"
+"112201","1122","4184","1200","1600","10.091853","77.068155","1300","PATTALINE-11KV","PATTALINE","3273"
+"221101","2211","2500","720","960","10.077721","77.059993","814","MOOLAKADAI-22KV","MOOLAKADAI","3508"
