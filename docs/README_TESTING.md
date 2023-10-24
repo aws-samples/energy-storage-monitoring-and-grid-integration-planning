@@ -639,7 +639,7 @@ Create an SQS queue with the same name **es-batteriesformeasurements** used in l
 >  Run Crawler with name **batteriesforecast** before running **estorage-forecast-dataprep-ff** step function.
 
 > [!IMPORTANT]
-> Upload the data to this **forecast-output-buckets/batteries-measurements-forecast/forecast-input** s3 folder before starting **estorage-forecast-dataprep-ff** step function. You will get the data from **forecast test data** inside **energy-storage** folder. For creating the predictor, large set historical data is required. So upload all the given files. For this you also need to create the same s3 folder structure to upload the data
+> Upload the data to this **ForecastOutputBucket/batteries-measurements-forecast/forecast-input** s3 folder before starting **estorage-forecast-dataprep-ff** step function. You will get the data from **forecast test data** inside **energy-storage** folder. For creating the predictor, large set historical data is required. So upload all the given files. For this you also need to create the same s3 folder structure to upload the data
 
 > [!NOTE]
 > If you want to create predictor again, manually you have to delete predictor which is already present in amazon forecast. Then run the step function[ estorage-forecast-dataprep-ff ] which will create new predictor and forecast.
@@ -651,17 +651,17 @@ Create an SQS queue with the same name **es-batteriesformeasurements** used in l
 
 - Navigate for step function. Open all step function one by one and click on **start execution**
 
-- ![Fig 50](../Step-function/Cleanup/204.png)
+- ![Fig 50](../image/Step-function/204.png)
 
 - Click on **start execution**
 
-- ![Fig 50](../Step-function/Cleanup/203.png)
+- ![Fig 50](../image/Step-function/203.png)
 
 - Now you can check data in OpenSearch and backed-up data in s3 firehose-output-bucket, within 2 to 3 minute
 
 - Run this "GET /_search" command to check upcoming data in OpenSearch under DevTool
 
-- ![Fig 50](../Step-function/Cleanup/205.png)
+- ![Fig 50](../image/Step-function/205.png)
 
 ## Cleanup steps:
 
