@@ -24,10 +24,7 @@ Parameters:
   ForecastOutputBucket:
     Type: String
     Description: Name of the S3 bucket
-  # DataBucketForTesting:
-  #   Type: String
-  #   Description: Name of the S3 bucket
-
+  
 Resources: 
   MyS3BucketSource:
     Type: 'AWS::S3::Bucket'
@@ -39,11 +36,7 @@ Resources:
     Properties:
       BucketName: !Ref ForecastOutputBucket
     
-  # MyS3BucketTesting:
-  #   Type: 'AWS::S3::Bucket'
-  #   Properties:
-  #     BucketName: !Ref DataBucketForTesting
-
+  
   IotCoreRule:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -56,7 +49,6 @@ Resources:
       Parameters:
         SourceBucketName: !Ref FireHoseOutputBucket
         DestinationBucketName: !Ref ForecastOutputBucket
-        # DataBucketForTesting: !Ref DataBucketForTesting
         OpenSearchUsername: !Ref OpenSearchUserName
         OpenSearchPassword: !Ref OpenSearchUserPassword
         UserNameParameter: !Ref IAMUserName
@@ -84,11 +76,4 @@ Resources:
       Parameters:
         SourceBucketName: !Ref FireHoseOutputBucket
         DestinationBucketName: !Ref ForecastOutputBucket
-        # DataBucketForTesting: !Ref DataBucketForTesting
-  
-  
-  
-  
-  
-  
-  
+      
