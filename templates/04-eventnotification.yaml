@@ -103,7 +103,7 @@ Resources:
               - 's3:PutBucketNotification'
               - 's3:GetBucketNotification'
               - 's3:ListBucket'
-              - 's3-object-lambda:*'
+              # - 's3-object-lambda:*'
             Resource:
               - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
               - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
@@ -215,7 +215,7 @@ Resources:
     
   MySchedulerScheduleForS3EventNotification:
     Type: AWS::Scheduler::Schedule
-    DependsOn: CreateEventNotificationFunction
+    # DependsOn: CreateEventNotificationFunction
     Properties:
       Description: "Scheduler for creating predictor"
       FlexibleTimeWindow:

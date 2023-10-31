@@ -22,7 +22,7 @@ Step-2. Click on **Create bucket**
 
   ![Fig 5](../image/TestS3Bucket/1.png)
 
-Step-3. Provide name for bucket.  
+Step-3. Provide name for bucket. (Bucket name must be globally unique and contain only lowercase) 
 
   ![Fig 5](../image/TestS3Bucket/2.png) 
 
@@ -32,9 +32,11 @@ Step-4. Scroll down and click on **Create bucket**
 
 **2.** Now create four folders inside this with name **betteries_info**, **batteries_measurements**, **renewable-plants-info** and **feeders-info**
 
-  - Now click on the bucket to open it. click on **create folder** button and give the name as **betteries_info** and click on **create folder**.
+  - Now click on the bucket to open it. Click on **create folder** button. 
   
   ![Fig 5](../image/TestS3Bucket/4.png)
+
+  - provide the folder name as **betteries_info** and click on **create folder**.
 
   ![Fig 6](../image/TestS3Bucket/5.png)
 
@@ -44,7 +46,7 @@ Step-4. Scroll down and click on **Create bucket**
 
   - After creating folder, upload the given ***.csv*** file to the respective folder. To get the csv file go to **energy-storage** folder. 
 
-  - Go to **S3 data** folder to find **.csv** file for all four folders with the same name as folder name. Download all four csv file.
+  - Go to **S3 data** folder inside **energy-storage** to find **.csv** file for all four folders with the same name as folder name. Download all four csv file.
 
 **3.** Upload files in respective folder
 

@@ -48,7 +48,7 @@ Resources:
       TemplateURL: "https://testinng-stack-111.s3.ap-south-1.amazonaws.com/02-firehose-opensearch.yaml"    
       Parameters:
         SourceBucketName: !Ref FireHoseOutputBucket
-        DestinationBucketName: !Ref ForecastOutputBucket
+        # DestinationBucketName: !Ref ForecastOutputBucket
         OpenSearchUsername: !Ref OpenSearchUserName
         OpenSearchPassword: !Ref OpenSearchUserPassword
         UserNameParameter: !Ref IAMUserName
@@ -58,7 +58,7 @@ Resources:
     Properties:
       TemplateURL: "https://testinng-stack-111.s3.ap-south-1.amazonaws.com/03-glue.yaml"    
       Parameters:
-        SourceBucketName: !Ref FireHoseOutputBucket
+        # SourceBucketName: !Ref FireHoseOutputBucket
         DestinationBucketName: !Ref ForecastOutputBucket
 
   EventNotification:

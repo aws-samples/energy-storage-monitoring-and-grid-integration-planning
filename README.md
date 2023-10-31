@@ -44,7 +44,7 @@ Actual data will flow from various sources, including batteries, wind turbine, s
 | us-east-1 |US East (N. Virginia)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-1.amazonaws.com/00-main.yaml) |
 | us-east-2 |US East (Ohio)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-1.amazonaws.com/00-main.yaml) |
 | us-west-2 |US West (Oregon)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-1.amazonaws.com/00-main.yaml) |
-| ap-southeast-1 |AP (Singapore)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-.amazonaws.com/00-main1.yaml) |
+| ap-southeast-1 |AP (Singapore)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-.amazonaws.com/00-main.yaml) |
 
 
 **1. From Cloudformation Service in AWS**
@@ -141,9 +141,8 @@ Actual data will flow from various sources, including batteries, wind turbine, s
 
   ![Fig 72](image/OpenSearch/21.png)
 
-  ![Fig 72](image/OpenSearch/22.png)
 
-  - **Now map the fireshose backend role to OpenSearch**
+  - **Now we will map the fireshose backend role to OpenSearch**
 
  **i.**  Go to side panel and click on **Security**
 
@@ -159,7 +158,7 @@ Actual data will flow from various sources, including batteries, wind turbine, s
 
  ![Fig 75](image/OpenSearch/8.png)
 
-**v.** Now in another tab navigate for Firehose, to get the **Firehose role arn**. Open first Firehose with name estorage-batteries-measurements-openSearch.
+**v.** Now in another tab navigate for Firehose, to get the **Firehose role arn**. Open first Firehose with name **estorage-batteries-measurements-openSearch**.
 
   ![Fig 76](image/OpenSearch/17.png)
 

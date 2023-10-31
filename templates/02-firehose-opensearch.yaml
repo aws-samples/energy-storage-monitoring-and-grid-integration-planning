@@ -2,14 +2,15 @@ AWSTemplateFormatVersion: "2010-09-09"
 Parameters:
   SourceBucketName:
     Type: String
-  DestinationBucketName:
-    Type: String
+  # DestinationBucketName:
+  #   Type: String
   # DataBucketForTesting:
   #   Type: String 
   OpenSearchUsername:
     Type: String
   OpenSearchPassword:
     Type: String
+    NoEcho: true
   UserNameParameter:
     Type: String
 
@@ -18,6 +19,7 @@ Resources:
     Type: AWS::KMS::Key
     Properties:
       Description: My KMS key
+      EnableKeyRotation: true
       KeyPolicy:
         Version: "2012-10-17"
         Id: key-default-1
