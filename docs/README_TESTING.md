@@ -98,7 +98,7 @@ Step-4. Scroll down and click on **Create bucket**
 
 - Now click on **Code** section.
 
-- To get the code please refer folder energy-storage. Inside energy-storage go to folder Step Function Code and copy the code inside **es-storagetwin-stepf** and paste it. Then click on **Create**.
+- To get the code please refer folder energy-storage. Inside energy-storage go to folder Step Function Code and copy the code inside **es-storagetwin-stepf** and paste it. 
 
 > [!NOTE] 
 > Change the **[AccountNo]** with your AWS account number and also change the **[region]** where you want to deploy these resources. Must do this changes for upcoming step function in 2b and 2c as well.
@@ -486,7 +486,7 @@ Create an SQS queue with the same name **es-batteriesformeasurements** used in l
 
   - Now click on **Code** section.
 
-  - To get the code please refer folder energy-storage. Inside energy-storage go to folder Step Function Code and copy the code inside **es-renewabletwin-stepf** and paste it. Then click on **Create**.
+  - To get the code please refer folder **energy-storage**. Inside energy-storage go to folder Step Function Code and copy the code inside **es-renewabletwin-stepf** and paste it. Then click on **Create**.
 
   > [!NOTE] 
   > Change the **[AccountNo]** with your AWS account number and also change the **[region]** where you want to deploy these resources. Must do this changes for upcoming step function in 2c as well.
@@ -510,7 +510,7 @@ Create an SQS queue with the same name **es-batteriesformeasurements** used in l
 
   **3. Create Lambda Function**
 
-  - Go to the AWS Management Console and navigate to the ***Lambda*** service.
+  - Go to the AWS Management Console and navigate to the **Lambda** service.
 
   - Create a Function:
 
