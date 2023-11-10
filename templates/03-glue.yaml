@@ -16,7 +16,7 @@ Resources:
   MyGlueRole:
     Type: "AWS::IAM::Role"
     Properties:
-      RoleName: MyGlueRoleForEnergyStorage
+      RoleName: MyGlueRoleForEnergyStorageAndGridIntegeration
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
