@@ -40,11 +40,11 @@ Actual data will flow from various sources, including batteries, wind turbine, s
 
 | AWS Region Code | Name | Launch |
 | --- | --- | --- 
-| ap-south-1 |India (Mumbai)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-south-1#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-1.amazonaws.com/00-main.yaml) |
-| us-east-1 |US East (N. Virginia)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-1.amazonaws.com/00-main.yaml) |
-| us-east-2 |US East (Ohio)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-1.amazonaws.com/00-main.yaml) |
-| us-west-2 |US West (Oregon)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-1.amazonaws.com/00-main.yaml) |
-| ap-southeast-1 |AP (Singapore)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=Energy-Storage&templateURL=https://testinng-stack-111.s3.ap-south-.amazonaws.com/00-main.yaml) |
+| ap-south-1 |India (Mumbai)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-south-1#/stacks/new?stackName=Energy-Storage&templateURL=https://aws-refarch.s3.amazonaws.com/energy-storage/00-main.yaml) |
+| us-east-1 |US East (N. Virginia)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Energy-Storage&templateURL=https://aws-refarch.s3.amazonaws.com/energy-storage/00-main.yaml) |
+| us-east-2 |US East (Ohio)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=Energy-Storage&templateURL=https://aws-refarch.s3.amazonaws.com/energy-storage/00-main.yaml) |
+| us-west-2 |US West (Oregon)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=Energy-Storage&templateURL=https://aws-refarch.s3.amazonaws.com/energy-storage/00-main.yaml) |
+| ap-southeast-1 |AP (Singapore)| [![cloudformation-launch-stack](image/architecture/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/new?stackName=Energy-Storage&templateURL=https://aws-refarch.s3.amazonaws.com/energy-storage/00-main.yaml) |
 
 
 **1. From Cloudformation Service in AWS**

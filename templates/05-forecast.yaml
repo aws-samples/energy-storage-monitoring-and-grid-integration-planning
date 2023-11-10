@@ -129,6 +129,9 @@ Resources:
                   - "forecast:CreateDatasetImportJob"
                   - "forecast:CreateForecastExportJob"
                   - "forecast:CreatePredictor"
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
                 Resource: 
                   - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:es-generateuid-for-forecast-dataset'
                   - !Sub 'arn:aws:forecast:${AWS::Region}:${AWS::AccountId}:dataset-group/estorage_forecast_dataset_group'
@@ -140,6 +143,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: CreatePredictorFunctionFF
+      ReservedConcurrentExecutions: 5 # Adjust the value as needed
       Runtime: python3.9
       Handler: index.lambda_handler
       Role: !GetAtt CreatePredictorRoles.Arn
@@ -211,8 +215,7 @@ Resources:
       - MyForecastExecutionRole
       - CreateFunctionEsGenerateuidForForecastDataset
       - ForecastDataset2
-      # - MyS3BucketSource
-      # - MyS3BucketDestination
+     
     Properties:
       StateMachineName: estorage-forecast-dataprep-ff
       DefinitionString:
@@ -401,7 +404,11 @@ Resources:
                   - 's3:PutBucketNotification'
                   - 's3:GetBucketNotification'
                   - 's3:ListBucket'
-                  # - 's3-object-lambda:*'
+                  - lambda:InvokeFunction
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+            
       
                 Resource:
                   - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
@@ -441,6 +448,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: es-generateuid-for-forecast-dataset
+      ReservedConcurrentExecutions: 5 # Adjust the value as needed
       Runtime: nodejs14.x
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRoleEsGenerateuidForForecastDataset.Arn

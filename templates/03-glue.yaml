@@ -1,7 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Parameters:
-  # SourceBucketName:
-  #   Type: String
   DestinationBucketName:
     Type: String
   
@@ -64,13 +62,9 @@ Resources:
 
   MyGlueCrawler:
     Type: 'AWS::Glue::Crawler'
-    # DependsOn: 
-    #  - MyGlueRole
-    #  - MyS3BucketDestination
     Properties:
       Name: batteriesforecast
       Role: !GetAtt MyGlueRole.Arn
-      # Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/MyGlueRoleForEnergyStorage"
       DatabaseName: energystorage1
       Targets:
         S3Targets:

@@ -641,7 +641,7 @@ Create an SQS queue with the same name **es-batteriesformeasurements** used in l
 >  Run Crawler with name **batteriesforecast** before running **estorage-forecast-dataprep-ff** step function.
 
 > [!IMPORTANT]
-> Upload the data to this **ForecastOutputBucket/batteries-measurements-forecast/forecast-input** s3 folder before starting **estorage-forecast-dataprep-ff** step function. You will get the data from **forecast test data** inside **energy-storage** folder. For creating the predictor, large set historical data is required. So upload all the given files. For this you also need to create the same s3 folder structure to upload the data
+> Upload the data to this **ForecastOutputBucket/batteries-measurements-forecast/forecast-input** s3 folder before starting **estorage-forecast-dataprep-ff** step function. You will get the data from **forecast test data** inside **energy-storage** folder. For creating the predictor, large set historical data is required. So upload all the given files. For this you also need to create the same s3 folder structure to upload the data. Make sure to give full permission of s3 bucket to your step function.
 
 > [!NOTE]
 > If you want to create predictor again, manually you have to delete predictor which is already present in amazon forecast. Then run the step function[ estorage-forecast-dataprep-ff ] which will create new predictor and forecast.

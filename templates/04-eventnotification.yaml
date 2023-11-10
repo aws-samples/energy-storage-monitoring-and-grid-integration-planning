@@ -10,12 +10,16 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: estorage-copy-forecastinputdata
+      ReservedConcurrentExecutions: 5 # Adjust the value as needed
       Runtime: nodejs14.x
       Handler: index.handler
       Role: !GetAtt LambdaBasicExecutionRoleFors3.Arn
       Environment:
         Variables:
           BUCKET_NAME: !Ref DestinationBucketName
+      TracingConfig:
+        Mode: Active
+      Timeout: 60    
       Code:
         ZipFile: |
                   const aws = require('aws-sdk');
@@ -73,6 +77,9 @@ Resources:
                   - s3:GetObject
                   - s3:ListBucket
                   - s3:PutObject
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
                 Resource:
                   - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
                   - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
@@ -103,7 +110,7 @@ Resources:
               - 's3:PutBucketNotification'
               - 's3:GetBucketNotification'
               - 's3:ListBucket'
-              # - 's3-object-lambda:*'
+             
             Resource:
               - Fn::Sub: "arn:aws:s3:::${SourceBucketName}"
               - Fn::Sub: "arn:aws:s3:::${SourceBucketName}/*"
@@ -127,6 +134,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: CreateEventNotificationFunction
+      ReservedConcurrentExecutions: 5 # Adjust the value as needed
       Runtime: python3.9
       Handler: index.lambda_handler
       Role: !GetAtt LambdaRoleForEvent.Arn
@@ -215,7 +223,6 @@ Resources:
     
   MySchedulerScheduleForS3EventNotification:
     Type: AWS::Scheduler::Schedule
-    # DependsOn: CreateEventNotificationFunction
     Properties:
       Description: "Scheduler for creating predictor"
       FlexibleTimeWindow:
