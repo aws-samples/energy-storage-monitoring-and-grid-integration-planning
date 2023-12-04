@@ -4,7 +4,7 @@
 
 ## Architecture Overview
 
-![Fig 1111](image/general_arch.png)
+![Fig 1111](../image/general_arch.png)
 
 ## Project overview
 
