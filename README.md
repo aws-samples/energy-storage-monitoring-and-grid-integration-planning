@@ -8,7 +8,7 @@
 
 ## Project overview
 
-This solution is to maximize grid benefits with Energy storage and Grid integration. Project focus on energy storage monitoring, which is an emerging area within the power industry. Using Energy Storage helps us to add more renewable energy to our power grid. If we can see how much energy we have stored, how much renewable energy we are making, and how fulls power lines are, it helps the companies that provide our electricity make better plans for using renewable energy.
+This solution is to maximize grid benefits with Energy storage and Grid integration Planning. Project focus on energy storage monitoring, which is an emerging area within the power industry. Using Energy Storage helps us to add more renewable energy to our power grid. If we can see how much energy we have stored, how much renewable energy we are making, and how fulls power lines are, it helps the companies that provide our electricity make better plans for using renewable energy.
 Actual data will flow from various sources, including batteries, wind turbine, solar panels and meter.
 
 ## Prerequisite to deploy the template
