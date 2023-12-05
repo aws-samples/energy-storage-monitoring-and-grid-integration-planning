@@ -1,5 +1,3 @@
-## My Project
-
 # Energy Storage Monitoring and Grid Integration Planning
 
 ## Architecture Overview
