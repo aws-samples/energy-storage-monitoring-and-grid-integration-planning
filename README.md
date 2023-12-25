@@ -7,11 +7,12 @@
 ## Project overview
 There is an increasing trend in grid scale energy storage in order to support the increase in usage of renewable generation. The challenges posed by intermittency in renewable generation limit direct integration into the grid, which can be addressed by charging the grid scale energy storage batteries from renewable generation sources. The energy storage batteries are charged when there is renewable generation, and discharged when there is less renewable generation and more demand for consumption.
 In order to do this, visibility into energy storage levels and correlation with renewable generation and grid conditions is important. This visibility will help utilities plan
-integration of energy storage and renewable into the grid
-schedule to charge/discharge the energy storage batteries
-leverage the data to generate battery level forecast in near future
+- integration of energy storage and renewable into the grid
+- schedule to charge/discharge the energy storage batteries
+- leverage the data to generate battery level forecast in near future
+
 This sample code includes solution to receive data from energy storage, renewable generation sources and feeder monitoring systems; process, store in a data lake and generate near real-time dashboards with integrated view of storage level, renewable generation and feeder conditions.
-The sample code can be used to capture parameters from energy storage using AWS IoT Core, and store in a data lake. The energy storage should send data to AWS IoT core in a predefined format (which can be customised by you to add/remove parameters). The data from renewable generation monitoring system and feeder monitoring system can be received on Amazon Kinesis Firehose. The renewable generation monitoring system and feeder monitoring system should send streaming data to Amazon Kinesis Firehose using AWS SDK. 
+The sample code can be used to capture parameters from energy storage using AWS IoT Core, and store in a data lake. The energy storage should send data to AWS IoT core in a predefined format (which can be customised by you to add/remove parameters). The data from renewable generation monitoring system and feeder monitoring system can be received on Amazon Kinesis Firehose. The renewable generation monitoring system and feeder monitoring system should send streaming data to Amazon Kinesis Firehose using AWS SDK.
 
 ## Prerequisite to deploy the template
 
